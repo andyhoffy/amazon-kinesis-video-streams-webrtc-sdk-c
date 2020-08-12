@@ -33,9 +33,49 @@ template <typename Func> void assertLFAndCRLF(PCHAR sdp, INT32 sdpLen, Func&& as
     assertFn((PCHAR) converted.c_str());
 };
 
-TEST_F(SdpApiTest, deserializeSessionDescription_NoMedia)
+class SdpParseTest :
+        public SdpApiTest,
+        public ::testing::WithParamInterface<
+        std::tuple<std::string /*sdp_offer*/,
+        std::vector<std::pair<std::string, std::string>> /*attributes*/>> {
+protected:
+    PCHAR sdp_offer() const {
+        return const_cast<PCHAR>(std::get<0>(GetParam()).c_str());
+    }
+
+    const std::vector<std::pair<std::string,std::string>>& attributes() const {
+        return std::get<1>(GetParam());
+    }
+};
+
+TEST_P(SdpParseTest, deserializeSessionDescription_NoMedia)
 {
-    CHAR sessionDescriptionNoMedia[] = R"(v=2
+    assertLFAndCRLF(sdp_offer(), strlen(sdp_offer()), [this](PCHAR sdp) {
+        SessionDescription sessionDescription;
+        MEMSET(&sessionDescription, 0x00, SIZEOF(SessionDescription));
+        EXPECT_EQ(deserializeSessionDescription(&sessionDescription, sdp), STATUS_SUCCESS);
+
+        const std::vector<std::pair<std::string, std::string>>& attributes = this->attributes();
+        ASSERT_EQ(attributes.size(), (int) sessionDescription.sessionAttributesCount) << sdp;
+
+        for (int ii = 0; ii < attributes.size(); ++ii) {
+            EXPECT_STREQ(attributes[ii].first.c_str(), sessionDescription.sdpAttributes[ii].attributeName);
+            EXPECT_STREQ(attributes[ii].second.c_str(), sessionDescription.sdpAttributes[ii].attributeValue);
+        }
+    });
+}
+
+static const char* noMedia =
+R"(v=2
+o=- 1904080082932320671 2 IN IP4 127.0.0.1
+s=-
+t=0 0
+a=group:BUNDLE 0 1
+a=msid-semantic: WMS f327e13b-3518-47fc-8b53-9cf74d22d03e
+)";
+
+static const char* noMedia_Trickle =
+R"(v=2
 o=- 1904080082932320671 2 IN IP4 127.0.0.1
 s=-
 t=0 0
@@ -44,23 +84,20 @@ a=ice-options:trickle
 a=msid-semantic: WMS f327e13b-3518-47fc-8b53-9cf74d22d03e
 )";
 
-    assertLFAndCRLF(sessionDescriptionNoMedia, ARRAY_SIZE(sessionDescriptionNoMedia) - 1, [](PCHAR sdp) {
-        SessionDescription sessionDescription;
-        MEMSET(&sessionDescription, 0x00, SIZEOF(SessionDescription));
-        EXPECT_EQ(deserializeSessionDescription(&sessionDescription, sdp), STATUS_SUCCESS);
-
-        EXPECT_EQ(sessionDescription.sessionAttributesCount, 3);
-
-        EXPECT_STREQ(sessionDescription.sdpAttributes[0].attributeName, "group");
-        EXPECT_STREQ(sessionDescription.sdpAttributes[0].attributeValue, "BUNDLE 0 1");
-
-        EXPECT_STREQ(sessionDescription.sdpAttributes[1].attributeName, "ice-options");
-        EXPECT_STREQ(sessionDescription.sdpAttributes[1].attributeValue, "trickle");
-
-        EXPECT_STREQ(sessionDescription.sdpAttributes[2].attributeName, "msid-semantic");
-        EXPECT_STREQ(sessionDescription.sdpAttributes[2].attributeValue, " WMS f327e13b-3518-47fc-8b53-9cf74d22d03e");
-    });
-}
+INSTANTIATE_TEST_CASE_P(SdpParseTest_Tests, SdpParseTest,
+                        ::testing::Values(
+                            std::make_tuple( noMedia,
+                                             std::vector<std::pair<std::string, std::string>>{
+                                                 {"group", "BUNDLE 0 1"},
+                                                 {"msid-semantic", " WMS f327e13b-3518-47fc-8b53-9cf74d22d03e"},
+                                             }),
+                            std::make_tuple( noMedia_Trickle,
+                                             std::vector<std::pair<std::string, std::string>>{
+                                                 {"group", "BUNDLE 0 1"},
+                                                 {"ice-options", "trickle"},
+                                                 {"msid-semantic", " WMS f327e13b-3518-47fc-8b53-9cf74d22d03e"},
+                                             })
+                            ));
 
 TEST_F(SdpApiTest, deserializeSessionDescription_Media)
 {
