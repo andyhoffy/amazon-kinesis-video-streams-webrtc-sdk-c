@@ -59,8 +59,10 @@ TEST_P(SdpParseTest, deserializeSessionDescription_NoMedia)
         ASSERT_EQ(attributes.size(), (int) sessionDescription.sessionAttributesCount) << sdp;
 
         for (int ii = 0; ii < attributes.size(); ++ii) {
-            EXPECT_STREQ(attributes[ii].first.c_str(), sessionDescription.sdpAttributes[ii].attributeName);
-            EXPECT_STREQ(attributes[ii].second.c_str(), sessionDescription.sdpAttributes[ii].attributeValue);
+            EXPECT_STREQ(attributes[ii].first.c_str(),
+                         sessionDescription.sdpAttributes[ii].attributeName);
+            EXPECT_STREQ(attributes[ii].second.c_str(),
+                         sessionDescription.sdpAttributes[ii].attributeValue);
         }
     });
 }
@@ -84,20 +86,21 @@ a=ice-options:trickle
 a=msid-semantic: WMS f327e13b-3518-47fc-8b53-9cf74d22d03e
 )";
 
-INSTANTIATE_TEST_CASE_P(SdpParseTest_Tests, SdpParseTest,
-                        ::testing::Values(
-                            std::make_tuple( noMedia,
-                                             std::vector<std::pair<std::string, std::string>>{
-                                                 {"group", "BUNDLE 0 1"},
-                                                 {"msid-semantic", " WMS f327e13b-3518-47fc-8b53-9cf74d22d03e"},
-                                             }),
-                            std::make_tuple( noMedia_Trickle,
-                                             std::vector<std::pair<std::string, std::string>>{
-                                                 {"group", "BUNDLE 0 1"},
-                                                 {"ice-options", "trickle"},
-                                                 {"msid-semantic", " WMS f327e13b-3518-47fc-8b53-9cf74d22d03e"},
-                                             })
-                            ));
+INSTANTIATE_TEST_CASE_P(
+        SdpParseTest_Tests, SdpParseTest,
+        ::testing::Values(
+            std::make_tuple( noMedia,
+                             std::vector<std::pair<std::string, std::string>>{
+                                 {"group", "BUNDLE 0 1"},
+                                 {"msid-semantic", " WMS f327e13b-3518-47fc-8b53-9cf74d22d03e"},
+                             }),
+            std::make_tuple( noMedia_Trickle,
+                             std::vector<std::pair<std::string, std::string>>{
+                                 {"group", "BUNDLE 0 1"},
+                                 {"ice-options", "trickle"},
+                                 {"msid-semantic", " WMS f327e13b-3518-47fc-8b53-9cf74d22d03e"},
+                             })
+            ));
 
 TEST_F(SdpApiTest, deserializeSessionDescription_Media)
 {
