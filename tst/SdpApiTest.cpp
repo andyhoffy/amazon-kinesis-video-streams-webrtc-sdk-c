@@ -33,17 +33,17 @@ template <typename Func> void assertLFAndCRLF(PCHAR sdp, INT32 sdpLen, Func&& as
     assertFn((PCHAR) converted.c_str());
 };
 
+using AttributeVec = std::vector<std::pair<std::string, std::string>>;
 class SdpParseTest :
         public SdpApiTest,
         public ::testing::WithParamInterface<
-        std::tuple<std::string /*sdp_offer*/,
-        std::vector<std::pair<std::string, std::string>> /*attributes*/>> {
+        std::tuple<std::string /*sdp_offer*/, AttributeVec /*attributes*/>> {
 protected:
     PCHAR sdp_offer() const {
         return const_cast<PCHAR>(std::get<0>(GetParam()).c_str());
     }
 
-    const std::vector<std::pair<std::string,std::string>>& attributes() const {
+    const AttributeVec& attributes() const {
         return std::get<1>(GetParam());
     }
 };
@@ -55,7 +55,7 @@ TEST_P(SdpParseTest, deserializeSessionDescription_NoMedia)
         MEMSET(&sessionDescription, 0x00, SIZEOF(SessionDescription));
         EXPECT_EQ(deserializeSessionDescription(&sessionDescription, sdp), STATUS_SUCCESS);
 
-        const std::vector<std::pair<std::string, std::string>>& attributes = this->attributes();
+        const AttributeVec& attributes = this->attributes();
         ASSERT_EQ(attributes.size(), (int) sessionDescription.sessionAttributesCount) << sdp;
 
         for (int ii = 0; ii < attributes.size(); ++ii) {
@@ -67,7 +67,7 @@ TEST_P(SdpParseTest, deserializeSessionDescription_NoMedia)
     });
 }
 
-static const char* noMedia =
+static const char* noMedia_NoTrickle =
 R"(v=2
 o=- 1904080082932320671 2 IN IP4 127.0.0.1
 s=-
@@ -89,7 +89,7 @@ a=msid-semantic: WMS f327e13b-3518-47fc-8b53-9cf74d22d03e
 INSTANTIATE_TEST_CASE_P(
         SdpParseTest_Tests, SdpParseTest,
         ::testing::Values(
-            std::make_tuple( noMedia,
+            std::make_tuple( noMedia_NoTrickle,
                              std::vector<std::pair<std::string, std::string>>{
                                  {"group", "BUNDLE 0 1"},
                                  {"msid-semantic", " WMS f327e13b-3518-47fc-8b53-9cf74d22d03e"},
