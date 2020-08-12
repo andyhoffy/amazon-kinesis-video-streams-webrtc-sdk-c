@@ -90,12 +90,12 @@ INSTANTIATE_TEST_CASE_P(
         SdpParseTest_Tests, SdpParseTest,
         ::testing::Values(
             std::make_tuple( noMedia_NoTrickle,
-                             std::vector<std::pair<std::string, std::string>>{
+                             AttributeVec{
                                  {"group", "BUNDLE 0 1"},
                                  {"msid-semantic", " WMS f327e13b-3518-47fc-8b53-9cf74d22d03e"},
                              }),
             std::make_tuple( noMedia_Trickle,
-                             std::vector<std::pair<std::string, std::string>>{
+                             AttributeVec{
                                  {"group", "BUNDLE 0 1"},
                                  {"ice-options", "trickle"},
                                  {"msid-semantic", " WMS f327e13b-3518-47fc-8b53-9cf74d22d03e"},
